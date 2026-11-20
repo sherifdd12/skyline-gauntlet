@@ -45,7 +45,9 @@ coding agent writing the implementation and a human playtester driving the tunin
 **Challenges.** Difficulty tuning. Our first human playtest scored 4/100 on Track. Bots make
 everything look easy, so we retuned from real human data until a first-timer landed at 50–70.
 
-**What's next.** Gamepad support, a per-event branded theme, and a QR "skill card" fans can take home.
+**Controllers welcome.** Mouse or gamepad: left stick aims, A or the right trigger shoots, and the D-pad enters your tag.
+
+**What's next.** A per-event branded theme, and a QR "skill card" fans can take home.
 
 ## Methodology write-up (short)
 We turned the Category 3 judging notes into a feature checklist before coding. These were: a
@@ -59,9 +61,12 @@ booth keeps working without connectivity.
 ## Tooling explanation
 - **WebStorm**: the project's IDE: opening, running and inspecting the TypeScript/Vite project,
   Git integration. Project settings (`.idea`) are committed.
-- **AI coding agent**: wrote the game, tests and deployment under human direction.
-- *(Planned once the hackathon license codes arrive: JetBrains AI / Junie / Air for a feature and
-  for review; update this section with what each did.)*
+- **JetBrains Air + Junie**: we launched a Junie agent session from Air inside WebStorm with one
+  written brief. Junie built optional gamepad support (`src/gamepad.ts`, main-loop and
+  initials-screen wiring, README) and wrote unit tests (`npm test`). Every shell command required
+  approval in Air.
+- **Claude (coding agent)**: wrote the core game and deployment, then reviewed Junie's diff and
+  verified it with the build, tests and a simulated controller in the browser before committing.
 
 ## Video script (target 2:30)
 | Time | On screen | Voice-over / caption |
@@ -73,7 +78,7 @@ booth keeps working without connectivity.
 | 1:15–1:35 | Results card, tag entry | "Every fan gets a skill profile, today's rank, and a tag." |
 | 1:35–1:55 | Second window: board.html updating live | "A second monitor shows today's top 10, updating instantly, with no Wi-Fi." |
 | 1:55–2:15 | Staff panel; soak test HUD running | "Staff tools: reset, export, mute. And a built-in soak test proves it stays smooth for hours." |
-| 2:15–2:30 | WebStorm with the project, GitHub repo | "Built in WebStorm with an AI coding agent. Open source, MIT. Built for Cloud9's next booth." |
+| 2:15–2:30 | WebStorm: the Air session where Junie built gamepad support, then the GitHub repo | "Built in WebStorm. Junie, run from JetBrains Air, added controller support, and a second agent reviewed it. Open source, MIT." |
 
 Recording tip: use the free Xbox Game Bar (Win+G) or OBS, 1080p. Music: none, or a royalty-free
 track you have rights to.

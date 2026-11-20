@@ -2,6 +2,7 @@ import "./style.css";
 import { sfx, setSound, soundOn } from "./audio";
 import { Clutch, Flick, H, Input, Round, ROUND_SECONDS, Track, W, drawTarget, mulberry32, profile } from "./game";
 import { Run, cleanInitials, clearDay, percentile, runsForDay, saveRun, toCSV, today, allRuns, onBoardChange } from "./store";
+import { GamepadInput, moveCrosshair } from "./gamepad";
 
 // ---------- config (URL params let booth staff tune without rebuilding) ----------
 const params = new URLSearchParams(location.search);
@@ -26,6 +27,8 @@ resize();
 
 const input: Input = { x: W / 2, y: H / 2, clicks: [] };
 let lastInput = performance.now();
+const gamepad = new GamepadInput();
+let controllerConnected = false;
 function toLogical(e: PointerEvent) {
   const dpr = window.devicePixelRatio || 1;
   return { x: (e.clientX * dpr - offX) / scale, y: (e.clientY * dpr - offY) / scale };
@@ -122,6 +125,7 @@ function onClick() {
 const overlay = document.getElementById("overlay")!;
 const ui = {
   render() {
+    controllerInitials = null;
     overlay.innerHTML = "";
     overlay.hidden = !(state === "results" || state === "initials" || state === "saved");
     if (overlay.hidden || !result) return;
@@ -162,17 +166,26 @@ const ui = {
       const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       const wheels = card.querySelectorAll<HTMLElement>(".wheel");
       const draw = () => wheels.forEach((w, i) => (w.querySelector(".ch")!.textContent = letters[i]));
+      const turn = (i: number, d: number) => {
+        letters[i] = A[(A.indexOf(letters[i]) + d + A.length) % A.length];
+        sfx.tick();
+        lastInput = performance.now();
+        draw();
+      };
       wheels.forEach((w, i) => {
-        const turn = (d: number) => {
-          letters[i] = A[(A.indexOf(letters[i]) + d + A.length) % A.length];
-          sfx.tick();
-          lastInput = performance.now();
-          draw();
-        };
-        w.querySelector(".up")!.addEventListener("click", () => turn(-1));
-        w.querySelector(".down")!.addEventListener("click", () => turn(1));
-        w.addEventListener("wheel", (e) => turn(Math.sign((e as WheelEvent).deltaY)));
+        w.querySelector(".up")!.addEventListener("click", () => turn(i, -1));
+        w.querySelector(".down")!.addEventListener("click", () => turn(i, 1));
+        w.addEventListener("wheel", (e) => turn(i, Math.sign((e as WheelEvent).deltaY)));
       });
+      let selected = 0;
+      controllerInitials = (pressed) => {
+        if (pressed.has(14)) selected = Math.max(0, selected - 1);
+        if (pressed.has(15)) selected = Math.min(2, selected + 1);
+        wheels.forEach((w, i) => w.classList.toggle("selected", i === selected));
+        if (pressed.has(12)) turn(selected, -1);
+        if (pressed.has(13)) turn(selected, 1);
+        if (pressed.has(0)) void save(letters.join(""));
+      };
       let cursor = 0;
       keyHandler = (e) => {
         if (/^[a-z0-9]$/i.test(e.key) && cursor < 3) {
@@ -186,6 +199,7 @@ const ui = {
   },
 };
 let keyHandler: ((e: KeyboardEvent) => void) | null = null;
+let controllerInitials: ((pressed: Set<number>) => void) | null = null;
 function bar(name: string, v: number, detail: string) {
   return `<div class="bar"><span>${name}</span><div class="track"><div class="fill" style="width:${v}%"></div></div><b>${v}</b><small>${detail}</small></div>`;
 }
@@ -352,10 +366,29 @@ function drawCrosshair() {
 // ---------- main loop ----------
 let last = performance.now();
 let fpsAcc = 0, fpsN = 0;
+function connectedGamepads(): readonly (Gamepad | null)[] {
+  try {
+    return navigator.getGamepads?.() ?? [];
+  } catch {
+    return [];
+  }
+}
 function frame(now: number) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   stateT += dt;
+  const pad = gamepad.sample(connectedGamepads(), dt);
+  controllerConnected = pad.connected;
+  if (pad.active) lastInput = now;
+  if (!staff.open) {
+    moveCrosshair(input, pad, W, H);
+    if (state === "initials") {
+      if (pad.pressed.size) controllerInitials?.(pad.pressed);
+    } else if (pad.pressed.has(0) || pad.pressed.has(7) || (state === "attract" && pad.pressed.has(9))) {
+      input.clicks.push({ x: input.x, y: input.y });
+      onClick();
+    }
+  }
   fpsAcc += dt;
   fpsN++;
   if (fpsAcc >= 1) {
@@ -447,6 +480,7 @@ function drawAttract() {
   text("Flick · Track · Clutch — 60 seconds to prove your aim", W / 2, 370, 32, "#bcd", "center", 500);
   const pulse = 0.6 + 0.4 * Math.sin(t * 4);
   text("CLICK ANYWHERE TO PLAY", W / 2, 470, 50, `rgba(255,255,255,${pulse})`);
+  if (controllerConnected) text("🎮 Controller connected", W / 2, 525, 24, "#bcd", "center", 500);
   // today's top 5
   text("TODAY'S TOP 5", W / 2, 580, 28, "#7fd4ff", "center", 700);
   const top = todayRuns.slice(0, 5);

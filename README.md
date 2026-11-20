@@ -18,7 +18,11 @@ At the end, each player sees a total score, a 0–100 rating per skill, a title
 (*Flick Specialist*, *Tracking Machine*, *Clutch Brain*, *All-Rounder*, *Complete Pro*),
 today's rank and percentile. They then enter a 3-character arcade tag.
 
-Controls: **mouse only**. You don't need a tutorial, because each round explains itself in one line.
+## Controls
+
+Use the mouse to aim and click to shoot. A connected gamepad is optional: use the left stick to aim,
+A or the right trigger to shoot, and A or Start to begin. On the tag screen, use the D-pad to select
+and change letters, then press A to save. You can switch between mouse and controller at any time.
 
 ## Built for the booth
 

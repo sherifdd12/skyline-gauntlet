@@ -10,6 +10,7 @@ humans did, what the agents did, and what we learned.
 |---|---|
 | **Sherif** (human) | Product owner. Picked the hackathon, played every build and reported back, made the calls, owns the accounts and the submission. |
 | **Claude** (coding agent) | Lead engineer. Read the rules, designed the game, wrote all the TypeScript, ran the tests, and set up the repo and deployment. |
+| **Junie** (JetBrains coding agent, run from **JetBrains Air** inside WebStorm) | Feature engineer. Built gamepad support end to end from one brief, with its own unit tests. |
 | **WebStorm** | The project's home: opening, running and inspecting the code, Git integration, and the `.idea` settings committed here. |
 
 ## 1. Rules first, code second
@@ -58,7 +59,32 @@ the late-round speed.
 **Lesson:** the AI wrote the code, but only a human could say whether it was fun. The tight loop
 of playtest screenshot → targeted change → push → live in a minute is the real productivity win.
 
-## 4. Shipping
+## 4. Two agents, one codebase: Junie builds gamepad support
+
+Booths often have controllers, not just mice. We used **JetBrains Air** in WebStorm to hand that
+feature to **Junie** as a separate agent session, with one written brief. The brief named the files
+(`src/main.ts`, not the scoring logic in `src/game.ts`), the API (the browser Gamepad API with no new
+packages), and the acceptance checks (deadzone, edge-triggered shooting, idle-timer reset, initials
+entry with the D-pad, `npm run build` must pass).
+
+What Junie did, in about five minutes:
+
+- Read the state machine, wrote a plan, then added `src/gamepad.ts`: a small, testable sampler
+  (deadzone, delta-time movement, edge-triggered buttons, multiple pads, reconnects).
+- Wired it into the main loop and the initials screen, added a "🎮 Controller connected" hint on the
+  attract screen, and documented the controls in the README.
+- Wrote `tests/gamepad.test.mjs` (3 tests, run with `npm test`) and confirmed that the build passed.
+
+**Human-in-the-loop moments.** Air asked for approval before each shell command, so Sherif saw
+every command first. The session also stopped once mid-task and was resumed with a one-line
+follow-up. Junie itself noted that it had not tested with a physical controller.
+
+**Cross-agent review.** Claude then reviewed Junie's diff line by line, re-ran the build and tests,
+and drove the game in a browser with a simulated controller. It confirmed the connection hint
+appears and that pressing A starts a run. Only after that was the change committed. One agent
+builds and a second agent verifies, with a human approving each step.
+
+## 5. Shipping
 
 The agent also handled the release:
 
@@ -66,7 +92,7 @@ The agent also handled the release:
 - Added a GitHub Actions workflow, so every push redeploys the game to GitHub Pages.
 - Committed WebStorm's `.idea` project settings as evidence of the toolchain.
 
-## 5. What worked and what didn't
+## 6. What worked and what didn't
 
 **Worked**
 - Asking the agent to restate the judging criteria as features *before* coding.
@@ -79,6 +105,7 @@ The agent also handled the release:
 
 ## Tools used
 
+- **JetBrains Air + Junie** (JetBrains AI Ultimate): agent session that built gamepad support and its tests.
 - **WebStorm**: project home, run and inspect, Git; `.idea` committed.
 - **AI coding agent (Claude)**: design, implementation, testing, deployment.
 - **GitHub + GitHub Actions + Pages**: open-source repo and always-live demo.

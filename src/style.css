@@ -21,6 +21,7 @@ button:hover { filter: brightness(1.15); }
 .wheels { display: flex; gap: 22px; justify-content: center; margin: 22px 0; }
 .wheel { display: grid; gap: 6px; }
 .wheel .ch { font-size: 90px; font-weight: 900; width: 110px; background: #ffffff10; border-radius: 14px; }
+.wheel.selected .ch { outline: 3px solid var(--c); }
 .wheel button { font-size: 28px; }
 #staff input { font-size: 28px; padding: 10px; width: 200px; text-align: center; border-radius: 10px; border: 1px solid #4fc3ff; background: #001; color: #fff; margin: 16px 0; display: block; margin-inline: auto; }
 #tools { display: grid; margin: 12px 0; }

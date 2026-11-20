@@ -197,7 +197,7 @@ export class Track extends Round {
     return { x: this.x, y: this.y, shoot: false };
   }
   step(dt: number, inp: Input) {
-    const k = 1 + 0.5 * (this.t / ROUND_SECONDS); // speeds up gently
+    const k = 1 + 0.8 * (this.t / ROUND_SECONDS); // speeds up gently
     const tt = this.t * 0.5 * k + this.phase;
     const tx = W / 2 + Math.sin(tt * 0.83) * 500 + Math.sin(tt * 2.1) * 80;
     const ty = H / 2 + 30 + Math.sin(tt * 1.17 + 1) * 240 + Math.cos(tt * 2.9) * 40;

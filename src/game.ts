@@ -139,7 +139,7 @@ export class Flick extends Round {
     this.target = this.spawn();
   }
   spawn(): Target {
-    const r = 46 - 22 * Math.min(1, this.t / ROUND_SECONDS);
+    const r = 54 - 20 * Math.min(1, this.t / ROUND_SECONDS);
     return { ...spot(this.rnd, r), r, born: this.t, life: 99, enemy: true };
   }
   aimPoint() {
@@ -186,7 +186,7 @@ export class Track extends Round {
   y = H / 2;
   vx = 0;
   vy = 0;
-  r = 42;
+  r = 58;
   onTime = 0;
   phase: number;
   constructor(rnd: () => number) {
@@ -197,10 +197,10 @@ export class Track extends Round {
     return { x: this.x, y: this.y, shoot: false };
   }
   step(dt: number, inp: Input) {
-    const k = 1 + this.t / ROUND_SECONDS; // speeds up
-    const tt = this.t * 0.9 * k + this.phase;
-    const tx = W / 2 + Math.sin(tt * 0.83) * 560 + Math.sin(tt * 2.1) * 140;
-    const ty = H / 2 + 30 + Math.sin(tt * 1.17 + 1) * 270 + Math.cos(tt * 2.9) * 70;
+    const k = 1 + 0.5 * (this.t / ROUND_SECONDS); // speeds up gently
+    const tt = this.t * 0.5 * k + this.phase;
+    const tx = W / 2 + Math.sin(tt * 0.83) * 500 + Math.sin(tt * 2.1) * 80;
+    const ty = H / 2 + 30 + Math.sin(tt * 1.17 + 1) * 240 + Math.cos(tt * 2.9) * 40;
     this.vx = (tx - this.x) / Math.max(dt, 1e-3);
     this.vy = (ty - this.y) / Math.max(dt, 1e-3);
     this.x = tx;
@@ -254,12 +254,12 @@ export class Clutch extends Round {
     if (this.t >= this.nextSpawn) {
       const n = this.rnd() < 0.35 + prog * 0.3 ? 2 : 1;
       for (let i = 0; i < n; i++) {
-        const r = 40 - 10 * prog;
+        const r = 46 - 8 * prog;
         const p = spot(this.rnd, r);
         if (this.targets.some((t) => Math.hypot(t.x - p.x, t.y - p.y) < 2.6 * r)) continue;
-        this.targets.push({ ...p, r, born: this.t, life: 1.4 - 0.55 * prog, enemy: this.rnd() < 0.62 });
+        this.targets.push({ ...p, r, born: this.t, life: 2.1 - 0.8 * prog, enemy: this.rnd() < 0.62 });
       }
-      this.nextSpawn = this.t + 0.75 - 0.35 * prog;
+      this.nextSpawn = this.t + 1.0 - 0.4 * prog;
     }
     for (const c of inp.clicks) {
       const hit = this.targets.find((t) => Math.hypot(c.x - t.x, c.y - t.y) <= t.r + 4);
@@ -290,8 +290,8 @@ export class Clutch extends Round {
       if (this.t - t.born > t.life && t.enemy) {
         this.escaped++;
         this.combo = 0;
-        this.add(-50);
-        this.pop(t.x, t.y, "-50", "#f99");
+        this.add(-30);
+        this.pop(t.x, t.y, "-30", "#f99");
       }
     }
     this.targets = this.targets.filter((t) => this.t - t.born <= t.life);
@@ -315,12 +315,12 @@ export class Clutch extends Round {
     }
   }
   stats(): RoundStats {
-    return { score: this.score, hits: this.hits, misses: this.misses, detail: `${this.hits} threats · ${this.allyHits} allies hit · ${this.escaped} escaped` };
+    return { score: this.score, hits: this.hits, misses: this.misses, detail: `${this.hits} threats · ${this.allyHits} ${this.allyHits === 1 ? "ally" : "allies"} hit · ${this.escaped} escaped` };
   }
 }
 
 /** Rough "great run" score per round, used to turn raw points into a 0-100 skill rating. */
-export const PAR = { flick: 7000, track: 3200, clutch: 5500 };
+export const PAR = { flick: 5000, track: 2600, clutch: 4500 };
 
 export function profile(s: { flick: number; track: number; clutch: number }) {
   const r = {

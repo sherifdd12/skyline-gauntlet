@@ -396,6 +396,7 @@ function frame(now: number) {
     r.update(dt, input);
     input.clicks = [];
     r.drawWorld(g);
+    r.drawSparks(g);
     for (const p of r.pops) text(p.text, p.x, p.y - p.age * 70, 34, p.color);
     drawHud(r);
     if (idle > IDLE_ROUND && !bot) go("attract"); // player left mid-run: discard
@@ -431,9 +432,11 @@ function drawHud(r: Round) {
 function drawAttract() {
   const t = stateT;
   // demo targets floating
-  for (let i = 0; i < 5; i++) {
-    const x = W / 2 + Math.cos(t * 0.6 + i * 1.3) * (380 + i * 40);
-    const y = H / 2 + 40 + Math.sin(t * 0.8 + i * 2.1) * 220;
+  for (let i = 0; i < 6; i++) {
+    // keep demo targets in the side lanes so they never cover the title or the top-5 list
+    const side = i % 2 ? 1 : -1;
+    const x = W / 2 + side * (560 + Math.sin(t * 0.7 + i) * 110);
+    const y = 170 + ((i * 140 + t * 60) % 640);
     drawTarget(g, x, y, 30, i % 2 ? "#ff8a3d" : "#4fc3ff", 1);
   }
   text("SKYLINE", W / 2, 170, 150, "#ffffff");

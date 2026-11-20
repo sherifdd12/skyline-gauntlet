@@ -48,14 +48,38 @@ export abstract class Round {
   abstract step(dt: number, inp: Input): void;
   abstract drawWorld(g: CanvasRenderingContext2D): void;
   abstract stats(): RoundStats;
+  sparks: { x: number; y: number; vx: number; vy: number; age: number; color: string }[] = [];
   pop(x: number, y: number, text: string, color: string) {
     this.pops.push({ x, y, text, color, age: 0 });
+    if (!text.startsWith("-") && !text.startsWith("ALLY")) {
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
+        const s = 240 + Math.random() * 260;
+        this.sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, age: 0, color });
+      }
+    }
   }
   update(dt: number, inp: Input) {
     this.t += dt;
     this.step(dt, inp);
     for (const p of this.pops) p.age += dt;
     this.pops = this.pops.filter((p) => p.age < 0.8);
+    for (const s of this.sparks) {
+      s.age += dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vx *= 0.9;
+      s.vy *= 0.9;
+    }
+    this.sparks = this.sparks.filter((s) => s.age < 0.45);
+  }
+  drawSparks(g: CanvasRenderingContext2D) {
+    for (const s of this.sparks) {
+      g.globalAlpha = 1 - s.age / 0.45;
+      g.fillStyle = s.color;
+      g.fillRect(s.x - 2.5, s.y - 2.5, 5, 5);
+    }
+    g.globalAlpha = 1;
   }
   add(points: number) {
     this.score = Math.max(0, this.score + points);

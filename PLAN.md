@@ -46,3 +46,13 @@ Built in **WebStorm** (free non-commercial) with **JetBrains Air / Junie** + Cla
 3. Polish: sound (procedural WebAudio), juice, accessibility, PWA offline.
 4. Soak test + README + AI_SHOWCASE.md (bonus story).
 5. GitHub repo + Pages deploy; video script; Devpost text. Submit early (by ~Jan 5).
+
+## Status (2026-11-20)
+- Done: playable loop, offline board, staff panel, soak test, sparks, NEW #1 banner, difficulty tuned
+  from two human playtests (2,314 → 8,054; ratings 63/88/58), repo + Pages live, AI_SHOWCASE.md,
+  SUBMISSION.md (description, methodology, video script).
+- TODO when JetBrains codes arrive (to sherifdd@gmail.com): activate All Products Pack + AI Ultimate,
+  then build at least one real feature through **JetBrains Air / Junie** inside WebStorm (the bonus
+  prize counts only JetBrains IDEs, Junie or Air) and add it to AI_SHOWCASE.md + tooling section.
+- Ideas: gamepad support, QR skill card, per-event theme, accessibility (color-blind safe ally marker
+  already uses a check mark shape, not color only).

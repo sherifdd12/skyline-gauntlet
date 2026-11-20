@@ -41,6 +41,9 @@ export const sfx = {
   tick: () => tone(1200, 0.03, "square", 0.03),
   go: () => tone(880, 0.25, "triangle", 0.14, 440),
   count: () => tone(520, 0.12, "triangle", 0.1),
+  record: () => {
+    [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.22, "triangle", 0.15), i * 110));
+  },
   end: () => {
     tone(523, 0.15, "triangle", 0.12);
     setTimeout(() => tone(659, 0.15, "triangle", 0.12), 140);

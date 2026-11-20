@@ -46,3 +46,6 @@ body.board { background: radial-gradient(circle at 50% 0, #0d2c63, #050d20 70%);
 #board footer small { color: var(--c); letter-spacing: .2em; font-weight: 700; }
 #board footer b { font-size: 34px; }
 #board footer em { color: #9bc; font-style: normal; }
+
+.record { display: inline-block; margin-bottom: 14px; padding: 6px 18px; border-radius: 999px; background: linear-gradient(90deg, #ffd36b, #ff8a3d); color: #2a1300; font-weight: 900; letter-spacing: .12em; animation: recordPulse .8s ease-in-out infinite alternate; }
+@keyframes recordPulse { from { transform: scale(1); box-shadow: 0 0 0 #ffd36b00; } to { transform: scale(1.08); box-shadow: 0 0 30px #ffd36baa; } }

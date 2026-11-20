@@ -54,7 +54,7 @@ let rounds: Round[] = [];
 let ri = 0;
 let result: { flick: number; track: number; clutch: number; total: number; details: string[] } | null = null;
 let todayRuns: Run[] = [];
-let rankInfo = { rank: 0, pct: 0 };
+let rankInfo = { rank: 0, pct: 0, record: false };
 let savedId = "";
 let bot = false; // soak-test autoplay
 let botSessions = 0;
@@ -86,8 +86,10 @@ function finishGame() {
   const [flick, track, clutch] = s.map((x) => x.score);
   result = { flick, track, clutch, total: flick + track + clutch, details: s.map((x) => x.detail) };
   const better = todayRuns.filter((r) => r.score > result!.total).length;
-  rankInfo = { rank: better + 1, pct: percentile(result.total, todayRuns) };
-  sfx.end();
+  const record = better === 0 && todayRuns.length > 0 && result.total > 0;
+  rankInfo = { rank: better + 1, pct: percentile(result.total, todayRuns), record };
+  if (record) sfx.record();
+  else sfx.end();
   go("results");
 }
 
@@ -136,6 +138,7 @@ const ui = {
           ${bar("Track", p.track, result.details[1])}
           ${bar("Clutch", p.clutch, result.details[2])}
         </div>
+        ${rankInfo.record ? '<div class="record">NEW #1 TODAY!</div>' : ""}
         <div class="rank">#${rankInfo.rank} today · better than ${rankInfo.pct}% of runs</div>
         <button class="primary" id="toInitials">SAVE MY SCORE</button>`;
     } else if (state === "initials") {

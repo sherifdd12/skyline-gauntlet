@@ -59,7 +59,7 @@ procedural sound.
 ## Built with JetBrains
 
 Developed in **WebStorm**, with AI coding agents working through JetBrains tooling.
-The `.idea` folder is committed as evidence. A full AI-workflow write-up (AI_SHOWCASE.md) is coming.
+The `.idea` folder is committed as evidence. See [AI_SHOWCASE.md](AI_SHOWCASE.md) for the AI workflow story.
 
 ## License
 

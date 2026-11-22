@@ -92,7 +92,20 @@ The agent also handled the release:
 - Added a GitHub Actions workflow, so every push redeploys the game to GitHub Pages.
 - Committed WebStorm's `.idea` project settings as evidence of the toolchain.
 
-## 6. What worked and what didn't
+## 6. Iterating after submission: Ghost Duel and the skill card
+
+After submitting, the team asked a harder question: what turns an aim test into an experience at the booth?
+The agent proposed three ideas, and the human picked two:
+
+- **Ghost Duel.** Every run records its crosshair path and running score. The next player races a translucent
+  ghost of today's #1 on the same daily course, with a live lead or deficit. Unit tests cover the recorder,
+  the interpolation and the daily seed. It was verified in the browser by letting the soak bot race its own ghost.
+- **Take-home skill card.** After saving, a QR code opens a phone-sized card. The whole result is packed into the
+  link fragment, so the booth PC stays offline and no personal data is stored anywhere.
+- **Hands-free demo mode (`?demo=TAGS`).** It plays real sessions without the test overlay. The agent used it to
+  record the new demo footage with headless Chrome, then cut it into the video with ffmpeg and a synthesized voice-over.
+
+## 7. What worked and what didn't
 
 **Worked**
 - Asking the agent to restate the judging criteria as features *before* coding.

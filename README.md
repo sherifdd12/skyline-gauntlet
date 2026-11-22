@@ -4,7 +4,7 @@ A 60-second aim gauntlet built for the **Cloud9 booth**. Three 20-second rounds 
 real competitive-FPS skills, then every player gets a skill profile and a spot on a live
 leaderboard on the booth's second screen. **No Wi-Fi needed.**
 
-**Demo video:** https://youtu.be/yrsl56O2jBU
+**Demo video:** https://youtu.be/A8bVvgm84l8
 
 > Entry for **Cloud9 x JetBrains: Sky's The Limit Hackathon 2026**, Category 3 (Event Mini Game).
 

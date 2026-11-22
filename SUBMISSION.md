@@ -14,7 +14,7 @@ Category 3: Event Mini Game
 - Leaderboard screen: https://sherifdd12.github.io/skyline-gauntlet/board.html
 - Repo: https://github.com/sherifdd12/skyline-gauntlet
 - Bonus (AI workflow story): https://github.com/sherifdd12/skyline-gauntlet/blob/main/AI_SHOWCASE.md
-- Video: https://youtu.be/yrsl56O2jBU
+- Video: https://youtu.be/A8bVvgm84l8
 
 ## Text description
 **Inspiration.** Booth lines are long and attention spans are short. We wanted something any fan

@@ -30,6 +30,10 @@ Each player gets a total score, a 0–100 rating per skill, a title (Flick Speci
 Machine, Clutch Brain, All-Rounder, Complete Pro), today's rank and percentile, and an arcade-style
 3-letter tag. Beating the day's best triggers a **NEW #1 TODAY!** celebration.
 
+**Ghost Duel.** Every run records its crosshair path and score. The next player races a translucent
+ghost of today's #1, live, on today's course (the same target sequence for everyone that day), with a
+running "+120 / −80 vs SHA's ghost" counter. The line watches a duel, not just a score.
+
 **Booth-ready by design.**
 - **Offline live leaderboard on a second monitor**: `board.html` updates instantly via
   BroadcastChannel and IndexedDB on the same PC, with no Wi-Fi or server.

@@ -11,6 +11,9 @@ import qrcode from "qrcode-generator";
 const params = new URLSearchParams(location.search);
 const PIN = params.get("pin") ?? "0909";
 const CARD_BASE = params.get("card") ?? DEFAULT_CARD_BASE; // where the phone opens the skill card
+// ?demo=TAG,TAG2,...: hands-free showcase (autoplay without the soak overlay, real tags, QR shown).
+const DEMO_TAGS = (params.get("demo") ?? "").split(",").filter(Boolean);
+const demo = DEMO_TAGS.length > 0;
 const IDLE_RESULTS = 25; // seconds before results/initials auto-finish
 const IDLE_ROUND = 12; // seconds without any input during a round = player walked away
 
@@ -180,7 +183,7 @@ const ui = {
     } else {
       const pos = todayRuns.findIndex((r) => r.id === savedId) + 1;
       const qr =
-        savedRun && !bot
+        savedRun && (!bot || demo)
           ? `<div class="qr">${qrSvg(cardUrl(CARD_BASE, { initials: savedRun.initials, score: savedRun.score, flick: savedRun.flick, track: savedRun.track, clutch: savedRun.clutch, day: savedRun.day, rank: pos || rankInfo.rank, runs: Math.max(todayRuns.length, pos) }))}<div class="qrcap">Scan to take your skill card home</div></div>`
           : "";
       card.innerHTML = `
@@ -335,9 +338,9 @@ function botInput(dt: number) {
       botCooldown = 0.18 + Math.random() * 0.25;
     }
     lastInput = performance.now();
-  } else if (state === "results" && stateT > 1.5) go("initials");
-  else if (state === "initials" && stateT > 0.8) void save("BOT");
-  else if (state === "saved" && stateT > 1) {
+  } else if (state === "results" && stateT > (demo ? 4 : 1.5)) go("initials");
+  else if (state === "initials" && stateT > 0.8) void save(demo ? DEMO_TAGS[botSessions % DEMO_TAGS.length] : "BOT");
+  else if (state === "saved" && stateT > (demo ? 6 : 1)) {
     botSessions++;
     startGame();
   }
@@ -484,7 +487,7 @@ function frame(now: number) {
     }
   }
   if (state === "play" || state === "attract") drawCrosshair();
-  if (bot) drawSoakHud();
+  if (bot && !demo) drawSoakHud();
   g.restore();
   requestAnimationFrame(frame);
 }
@@ -595,5 +598,12 @@ function drawSoakHud() {
     return botSessions;
   },
 };
+
+if (demo)
+  setTimeout(() => {
+    bot = true;
+    botSessions = 0;
+    startGame();
+  }, 2500);
 
 requestAnimationFrame(frame);

@@ -4,10 +4,13 @@ import { Clutch, Flick, H, Input, Round, ROUND_SECONDS, Track, W, drawTarget, mu
 import { Run, cleanInitials, clearDay, percentile, runsForDay, saveRun, toCSV, today, allRuns, onBoardChange } from "./store";
 import { GamepadInput, moveCrosshair } from "./gamepad";
 import { Ghost, GhostRecorder, daySeed, ghostAt } from "./ghost";
+import { DEFAULT_CARD_BASE, cardUrl } from "./card";
+import qrcode from "qrcode-generator";
 
 // ---------- config (URL params let booth staff tune without rebuilding) ----------
 const params = new URLSearchParams(location.search);
 const PIN = params.get("pin") ?? "0909";
+const CARD_BASE = params.get("card") ?? DEFAULT_CARD_BASE; // where the phone opens the skill card
 const IDLE_RESULTS = 25; // seconds before results/initials auto-finish
 const IDLE_ROUND = 12; // seconds without any input during a round = player walked away
 
@@ -66,6 +69,14 @@ let botSessions = 0;
 let rec = new GhostRecorder();
 let rival: { ghost: Ghost; initials: string; score: number } | null = null;
 let ghostDiff: number | null = null;
+let savedRun: Run | null = null;
+
+function qrSvg(text: string): string {
+  const q = qrcode(0, "M");
+  q.addData(text);
+  q.make();
+  return q.createSvgTag({ cellSize: 5, margin: 3, scalable: true });
+}
 
 async function refreshBoard() {
   todayRuns = await runsForDay();
@@ -90,6 +101,7 @@ function startGame() {
   savedId = "";
   rec = new GhostRecorder();
   ghostDiff = null;
+  savedRun = null;
   const best = todayRuns.find((r) => r.ghost && r.ghost.x.length > 0);
   rival = best && best.ghost ? { ghost: best.ghost, initials: best.initials, score: best.score } : null;
   go("countdown");
@@ -122,6 +134,7 @@ async function save(initials: string) {
     ghost: rec.g,
   };
   savedId = run.id;
+  savedRun = run;
   await saveRun(run);
   await refreshBoard();
   go("saved");
@@ -166,10 +179,15 @@ const ui = {
         <button class="primary" id="saveBtn">SAVE</button>`;
     } else {
       const pos = todayRuns.findIndex((r) => r.id === savedId) + 1;
+      const qr =
+        savedRun && !bot
+          ? `<div class="qr">${qrSvg(cardUrl(CARD_BASE, { initials: savedRun.initials, score: savedRun.score, flick: savedRun.flick, track: savedRun.track, clutch: savedRun.clutch, day: savedRun.day, rank: pos || rankInfo.rank, runs: Math.max(todayRuns.length, pos) }))}<div class="qrcap">Scan to take your skill card home</div></div>`
+          : "";
       card.innerHTML = `
         <div class="eyebrow">SAVED</div>
         <div class="big">#${pos || rankInfo.rank}</div>
         <div class="title">on today's board — check the big screen!</div>
+        ${qr}
         <button class="primary" id="doneBtn">NEXT PLAYER</button>`;
     }
     overlay.appendChild(card);

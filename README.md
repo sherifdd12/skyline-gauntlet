@@ -34,6 +34,14 @@ against it ("vs SHA's ghost +120"), and the results card says whether you beat i
 Everyone plays **today's course**: the same target sequence all day (a daily seed per round), so the race is fair.
 The course changes at midnight. Ghosts are stored with the run in IndexedDB, so this works offline too.
 
+## Skill card: take your result home
+
+After saving, the screen shows a QR code. Scanning it opens a phone-sized **skill card** with the
+player's tag, title, score, rank of the day and the three skill bars, ready to screenshot and share.
+The result is packed into the link itself (`card.html#…`), so the booth PC needs no network and nothing
+is stored online. The phone opens the card page on its own mobile data. Use `?card=<url>` to point
+the QR at a different host.
+
 ## Built for the booth
 
 - **Second-screen live leaderboard.** Open `board.html` on a second monitor. It shows today's

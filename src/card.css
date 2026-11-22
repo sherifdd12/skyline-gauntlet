@@ -1,0 +1,19 @@
+:root { color-scheme: dark; --c: #4fc3ff; --gold: #ffd36b; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: linear-gradient(180deg, #06122b, #0b2a55); color: #fff;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+body { display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; }
+.sc { width: min(420px, 100%); background: linear-gradient(160deg, #0d2550, #071631); border: 1px solid #4fc3ff55;
+  border-radius: 22px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 60px #0009, 0 0 40px #4fc3ff22; }
+.brand { font-weight: 900; letter-spacing: .12em; font-size: 18px; }
+.brand span { color: var(--c); }
+.tag { font-size: 64px; font-weight: 900; letter-spacing: .1em; margin-top: 14px; }
+.ptitle { color: var(--gold); font-size: 24px; font-weight: 700; }
+.score { font-size: 52px; font-weight: 900; margin-top: 6px; }
+.muted { color: #9ab3cf; font-size: 15px; margin-top: 4px; }
+.small { font-size: 13px; margin-top: 18px; line-height: 1.4; }
+.bars { margin-top: 20px; display: grid; gap: 12px; }
+.row { display: grid; grid-template-columns: 64px 1fr 36px; align-items: center; gap: 10px; text-align: left; font-weight: 600; }
+.track { height: 12px; background: #ffffff1a; border-radius: 6px; overflow: hidden; }
+.fill { height: 100%; background: linear-gradient(90deg, var(--c), var(--gold)); }
+.row b { text-align: right; }

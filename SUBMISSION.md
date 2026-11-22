@@ -34,6 +34,10 @@ Machine, Clutch Brain, All-Rounder, Complete Pro), today's rank and percentile, 
 ghost of today's #1, live, on today's course (the same target sequence for everyone that day), with a
 running "+120 / −80 vs SHA's ghost" counter. The line watches a duel, not just a score.
 
+**Take-home skill card.** After saving, a QR code opens a phone-sized card with your tag, title, score,
+rank of the day and skill bars, ready to screenshot and share. The result travels inside the link, so the
+booth stays offline and no personal data is collected.
+
 **Booth-ready by design.**
 - **Offline live leaderboard on a second monitor**: `board.html` updates instantly via
   BroadcastChannel and IndexedDB on the same PC, with no Wi-Fi or server.

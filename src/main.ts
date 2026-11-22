@@ -3,6 +3,7 @@ import { sfx, setSound, soundOn } from "./audio";
 import { Clutch, Flick, H, Input, Round, ROUND_SECONDS, Track, W, drawTarget, mulberry32, profile } from "./game";
 import { Run, cleanInitials, clearDay, percentile, runsForDay, saveRun, toCSV, today, allRuns, onBoardChange } from "./store";
 import { GamepadInput, moveCrosshair } from "./gamepad";
+import { Ghost, GhostRecorder, daySeed, ghostAt } from "./ghost";
 
 // ---------- config (URL params let booth staff tune without rebuilding) ----------
 const params = new URLSearchParams(location.search);
@@ -61,6 +62,10 @@ let rankInfo = { rank: 0, pct: 0, record: false };
 let savedId = "";
 let bot = false; // soak-test autoplay
 let botSessions = 0;
+// Ghost Duel: record this run, race today's best recorded run
+let rec = new GhostRecorder();
+let rival: { ghost: Ghost; initials: string; score: number } | null = null;
+let ghostDiff: number | null = null;
 
 async function refreshBoard() {
   todayRuns = await runsForDay();
@@ -76,11 +81,17 @@ function go(s: State) {
 }
 
 function startGame() {
-  const rnd = bot ? mulberry32(botSessions + 1) : Math.random;
-  rounds = [new Flick(rnd), new Track(rnd), new Clutch(rnd)];
+  // Humans all play today's course (same seed per round), so the ghost race is fair.
+  const day = today();
+  const rnd = (k: number) => (bot ? mulberry32(botSessions * 3 + k) : mulberry32(daySeed(day, k)));
+  rounds = [new Flick(rnd(1)), new Track(rnd(2)), new Clutch(rnd(3))];
   ri = 0;
   result = null;
   savedId = "";
+  rec = new GhostRecorder();
+  ghostDiff = null;
+  const best = todayRuns.find((r) => r.ghost && r.ghost.x.length > 0);
+  rival = best && best.ghost ? { ghost: best.ghost, initials: best.initials, score: best.score } : null;
   go("countdown");
 }
 
@@ -91,6 +102,7 @@ function finishGame() {
   const better = todayRuns.filter((r) => r.score > result!.total).length;
   const record = better === 0 && todayRuns.length > 0 && result.total > 0;
   rankInfo = { rank: better + 1, pct: percentile(result.total, todayRuns), record };
+  ghostDiff = rival ? result.total - rival.score : null;
   if (record) sfx.record();
   else sfx.end();
   go("results");
@@ -107,6 +119,7 @@ async function save(initials: string) {
     clutch: result.clutch,
     ts: Date.now(),
     day: today(),
+    ghost: rec.g,
   };
   savedId = run.id;
   await saveRun(run);
@@ -143,6 +156,7 @@ const ui = {
           ${bar("Clutch", p.clutch, result.details[2])}
         </div>
         ${rankInfo.record ? '<div class="record">NEW #1 TODAY!</div>' : ""}
+        ${rival && ghostDiff !== null ? `<div class="rank">${ghostDiff > 0 ? "You beat" : "You lost to"} ${rival.initials}'s ghost by ${Math.abs(ghostDiff).toLocaleString()}</div>` : ""}
         <div class="rank">#${rankInfo.rank} today · better than ${rankInfo.pct}% of runs</div>
         <button class="primary" id="toInitials">SAVE MY SCORE</button>`;
     } else if (state === "initials") {
@@ -429,12 +443,16 @@ function frame(now: number) {
     }
   } else if (state === "play") {
     const r = rounds[ri];
+    const shot = input.clicks.length > 0;
     r.update(dt, input);
     input.clicks = [];
+    const playT = ri * ROUND_SECONDS + r.t;
+    rec.sample(playT, input.x, input.y, runTotal(r), shot);
     r.drawWorld(g);
     r.drawSparks(g);
     for (const p of r.pops) text(p.text, p.x, p.y - p.age * 70, 34, p.color);
-    drawHud(r);
+    drawGhost(playT);
+    drawHud(r, playT);
     if (idle > IDLE_ROUND && !bot) go("attract"); // player left mid-run: discard
     else if (r.done) {
       ri++;
@@ -453,10 +471,44 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 
-function drawHud(r: Round) {
-  const total = rounds.slice(0, ri).reduce((a, x) => a + x.stats().score, 0) + Math.round(r.score);
+function runTotal(r: Round) {
+  return rounds.slice(0, ri).reduce((a, x) => a + x.stats().score, 0) + Math.round(r.score);
+}
+
+function drawGhost(playT: number) {
+  if (!rival) return;
+  const p = ghostAt(rival.ghost, playT);
+  if (!p) return;
+  g.save();
+  g.globalAlpha = 0.55;
+  g.strokeStyle = "#ffd36b";
+  g.lineWidth = 2.5;
+  g.beginPath();
+  g.arc(p.x, p.y, 13, 0, Math.PI * 2);
+  g.stroke();
+  if (p.shotAge < 0.25) {
+    // ghost fired: expanding ring
+    g.globalAlpha = 0.6 * (1 - p.shotAge / 0.25);
+    g.beginPath();
+    g.arc(p.x, p.y, 13 + p.shotAge * 120, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.globalAlpha = 0.7;
+  text(rival.initials, p.x, p.y - 30, 20, "#ffd36b", "center", 700);
+  g.restore();
+}
+
+function drawHud(r: Round, playT: number) {
+  const total = runTotal(r);
   text(r.title, 60, 50, 34, "#7fd4ff", "left");
   text(total.toLocaleString(), W / 2, 50, 48, "#fff");
+  if (rival) {
+    const p = ghostAt(rival.ghost, playT);
+    if (p) {
+      const d = total - p.score;
+      text(`vs ${rival.initials}'s ghost  ${d >= 0 ? "+" : "−"}${Math.abs(d).toLocaleString()}`, W / 2, 130, 28, d >= 0 ? "#7dffa8" : "#ff8a3d", "center", 700);
+    }
+  }
   text(r.left.toFixed(1) + "s", W - 60, 50, 40, r.left < 5 ? "#ff8a3d" : "#fff", "right");
   g.fillStyle = "#ffffff22";
   g.fillRect(0, 90, W, 6);
@@ -480,6 +532,8 @@ function drawAttract() {
   text("Flick · Track · Clutch — 60 seconds to prove your aim", W / 2, 370, 32, "#bcd", "center", 500);
   const pulse = 0.6 + 0.4 * Math.sin(t * 4);
   text("CLICK ANYWHERE TO PLAY", W / 2, 470, 50, `rgba(255,255,255,${pulse})`);
+  const champ = todayRuns[0];
+  if (champ && champ.ghost) text(`Race ${champ.initials}'s ghost on today's course`, W / 2, 422, 26, "#ffd36b", "center", 600);
   if (controllerConnected) text("🎮 Controller connected", W / 2, 525, 24, "#bcd", "center", 500);
   // today's top 5
   text("TODAY'S TOP 5", W / 2, 580, 28, "#7fd4ff", "center", 700);

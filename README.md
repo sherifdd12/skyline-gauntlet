@@ -26,6 +26,14 @@ Use the mouse to aim and click to shoot. A connected gamepad is optional: use th
 A or the right trigger to shoot, and A or Start to begin. On the tag screen, use the D-pad to select
 and change letters, then press A to save. You can switch between mouse and controller at any time.
 
+## Ghost Duel: race today's #1, live
+
+Every run records its crosshair path and running score. The next player races a translucent
+**ghost** of today's best run, labelled with its tag. The HUD shows a live lead or deficit
+against it ("vs SHA's ghost +120"), and the results card says whether you beat it.
+Everyone plays **today's course**: the same target sequence all day (a daily seed per round), so the race is fair.
+The course changes at midnight. Ghosts are stored with the run in IndexedDB, so this works offline too.
+
 ## Built for the booth
 
 - **Second-screen live leaderboard.** Open `board.html` on a second monitor. It shows today's

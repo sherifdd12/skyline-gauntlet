@@ -1,5 +1,6 @@
 // Local leaderboard: IndexedDB on this PC only, live-synced to other windows with BroadcastChannel.
 // No network is ever used, so the booth keeps working without Wi-Fi.
+import type { Ghost } from "./ghost";
 
 export interface Run {
   id: string;
@@ -10,6 +11,7 @@ export interface Run {
   clutch: number;
   ts: number;
   day: string; // YYYY-MM-DD local, so "today's top" resets naturally each event day
+  ghost?: Ghost; // crosshair path + running score, raced by later players
 }
 
 const DB = "skyline-gauntlet";

@@ -1,6 +1,7 @@
 import "./style.css";
 import { sfx, setSound, soundOn } from "./audio";
 import { Clutch, Flick, H, Input, Round, ROUND_SECONDS, Track, W, drawTarget, mulberry32, profile } from "./game";
+import { drawCity, drawFlash, drawFx, drawReticle, shakeOffset, stepFx } from "./fx";
 import { Run, cleanInitials, clearDay, percentile, runsForDay, saveRun, toCSV, today, allRuns, onBoardChange } from "./store";
 import { GamepadInput, moveCrosshair } from "./gamepad";
 import { Ghost, GhostRecorder, daySeed, ghostAt } from "./ghost";
@@ -347,55 +348,29 @@ function botInput(dt: number) {
 }
 
 // ---------- background ----------
-const stars = Array.from({ length: 140 }, (_, i) => {
-  const r = mulberry32(i * 7 + 3);
-  return { x: r() * W, y: r() * H, z: 0.3 + r() * 0.7 };
-});
+// Neon night city (fx.ts). Dimmed during play so the drones stay readable.
 let bgT = 0;
 function drawBackground(dt: number) {
   bgT += dt;
-  const grad = g.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, "#06122b");
-  grad.addColorStop(1, "#0b2a55");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, W, H);
-  for (const s of stars) {
-    const x = (s.x + bgT * 18 * s.z) % W;
-    g.fillStyle = `rgba(160,210,255,${0.25 + 0.5 * s.z})`;
-    g.fillRect(x, s.y, 2 * s.z + 0.5, 2 * s.z + 0.5);
-  }
-  // soft cloud bands
-  g.fillStyle = "rgba(120,190,255,0.05)";
-  for (let i = 0; i < 4; i++) {
-    const y = 620 + i * 60;
-    g.beginPath();
-    g.ellipse(((bgT * (10 + i * 6) + i * 400) % (W + 600)) - 300, y, 420, 50, 0, 0, Math.PI * 2);
-    g.fill();
-  }
+  drawCity(g, W, H, bgT, state === "play" ? 0.3 : state === "attract" ? 0.05 : 0.2);
 }
 
-function text(s: string, x: number, y: number, size: number, color = "#fff", align: CanvasTextAlign = "center", weight = 800) {
+function text(s: string, x: number, y: number, size: number, color = "#fff", align: CanvasTextAlign = "center", weight = 800, outline = false) {
   g.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
   g.textAlign = align;
   g.textBaseline = "middle";
+  if (outline) {
+    g.lineJoin = "round";
+    g.lineWidth = Math.max(4, size * 0.16);
+    g.strokeStyle = "rgba(5,6,26,0.85)";
+    g.strokeText(s, x, y);
+  }
   g.fillStyle = color;
   g.fillText(s, x, y);
 }
 
 function drawCrosshair() {
-  g.save();
-  g.strokeStyle = "#ffffff";
-  g.lineWidth = 2.5;
-  const { x, y } = input;
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    g.beginPath();
-    g.moveTo(x + dx * 7, y + dy * 7);
-    g.lineTo(x + dx * 17, y + dy * 17);
-    g.stroke();
-  }
-  g.fillStyle = "#fff";
-  g.fillRect(x - 1.5, y - 1.5, 3, 3);
-  g.restore();
+  drawReticle(g, input.x, input.y, bgT);
 }
 
 // ---------- main loop ----------
@@ -469,10 +444,20 @@ function frame(now: number) {
     input.clicks = [];
     const playT = ri * ROUND_SECONDS + r.t;
     rec.sample(playT, input.x, input.y, runTotal(r), shot);
+    stepFx(dt);
+    const sh = shakeOffset();
+    g.save();
+    g.translate(sh.x, sh.y);
     r.drawWorld(g);
-    r.drawSparks(g);
-    for (const p of r.pops) text(p.text, p.x, p.y - p.age * 70, 34, p.color);
+    drawFx(g);
+    for (const p of r.pops) {
+      g.globalAlpha = Math.min(1, 2.5 * (1 - p.age / 0.8));
+      text(p.text, p.x, p.y - p.age * 70, 34 + 10 * Math.max(0, 0.15 - p.age) / 0.15, p.color, "center", 900, true);
+    }
+    g.globalAlpha = 1;
     drawGhost(playT);
+    g.restore();
+    drawFlash(g, W, H);
     drawHud(r, playT);
     if (idle > IDLE_ROUND && !bot) go("attract"); // player left mid-run: discard
     else if (r.done) {
@@ -521,7 +506,13 @@ function drawGhost(playT: number) {
 
 function drawHud(r: Round, playT: number) {
   const total = runTotal(r);
-  text(r.title, 60, 50, 34, "#7fd4ff", "left");
+  // glass HUD bar
+  const hud = g.createLinearGradient(0, 0, 0, 96);
+  hud.addColorStop(0, "rgba(10,8,36,0.85)");
+  hud.addColorStop(1, "rgba(10,8,36,0.55)");
+  g.fillStyle = hud;
+  g.fillRect(0, 0, W, 90);
+  text(r.title, 60, 50, 34, "#39e6ff", "left");
   text(total.toLocaleString(), W / 2, 50, 48, "#fff");
   if (rival) {
     const p = ghostAt(rival.ghost, playT);
@@ -533,9 +524,13 @@ function drawHud(r: Round, playT: number) {
   text(r.left.toFixed(1) + "s", W - 60, 50, 40, r.left < 5 ? "#ff8a3d" : "#fff", "right");
   g.fillStyle = "#ffffff22";
   g.fillRect(0, 90, W, 6);
-  g.fillStyle = "#4fc3ff";
+  const bar = g.createLinearGradient(0, 0, W, 0);
+  bar.addColorStop(0, "#39e6ff");
+  bar.addColorStop(1, "#ff3d9a");
+  g.fillStyle = bar;
   g.fillRect(0, 90, W * (r.t / ROUND_SECONDS), 6);
-  if (r.combo >= 3 && r.key !== "track") text(`x${r.combo} STREAK`, W - 60, 130, 28, "#ffd36b", "right");
+  if (r.combo >= 3 && r.key !== "track") text(`x${r.combo} STREAK`, W - 60, 130, 28 + Math.min(r.combo, 10), "#ffd36b", "right", 900, true);
+  if (r.key === "track" && r.combo > 0) text("LOCKED ON", W - 60, 130, 28, "#5dffa8", "right", 900, true);
 }
 
 function drawAttract() {
@@ -546,11 +541,16 @@ function drawAttract() {
     const side = i % 2 ? 1 : -1;
     const x = W / 2 + side * (560 + Math.sin(t * 0.7 + i) * 110);
     const y = 170 + ((i * 140 + t * 60) % 640);
-    drawTarget(g, x, y, 30, i % 2 ? "#ff8a3d" : "#4fc3ff", 1);
+    drawTarget(g, x, y, 30, i % 2 ? "#ff8a3d" : "#39e6ff", 1);
   }
-  text("SKYLINE", W / 2, 170, 150, "#ffffff");
-  text("GAUNTLET", W / 2, 285, 80, "#7fd4ff", "center", 700);
-  text("Flick · Track · Clutch — 60 seconds to prove your aim", W / 2, 370, 32, "#bcd", "center", 500);
+  g.save();
+  g.shadowColor = "#ff3d9a";
+  g.shadowBlur = 30;
+  text("SKYLINE", W / 2, 170, 150, "#ffffff", "center", 900, true);
+  g.shadowColor = "#39e6ff";
+  text("GAUNTLET", W / 2, 285, 80, "#39e6ff", "center", 800, true);
+  g.restore();
+  text("Flick · Track · Clutch — 60 seconds to prove your aim", W / 2, 370, 32, "#dde6ff", "center", 600, true);
   const pulse = 0.6 + 0.4 * Math.sin(t * 4);
   text("CLICK ANYWHERE TO PLAY", W / 2, 470, 50, `rgba(255,255,255,${pulse})`);
   const champ = todayRuns[0];

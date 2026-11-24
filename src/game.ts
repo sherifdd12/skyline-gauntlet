@@ -1,5 +1,6 @@
 // The three 20-second skill rounds. Everything is in a fixed 1600x900 logical space.
 import { sfx } from "./audio";
+import { burst, drawDrone, hurt } from "./fx";
 
 export const W = 1600;
 export const H = 900;
@@ -48,38 +49,17 @@ export abstract class Round {
   abstract step(dt: number, inp: Input): void;
   abstract drawWorld(g: CanvasRenderingContext2D): void;
   abstract stats(): RoundStats;
-  sparks: { x: number; y: number; vx: number; vy: number; age: number; color: string }[] = [];
   pop(x: number, y: number, text: string, color: string) {
     this.pops.push({ x, y, text, color, age: 0 });
-    if (!text.startsWith("-") && !text.startsWith("ALLY")) {
-      for (let i = 0; i < 14; i++) {
-        const a = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
-        const s = 240 + Math.random() * 260;
-        this.sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, age: 0, color });
-      }
-    }
+    // visual only (fx.ts): bursts, shockwave, shake. Never touches scoring or the seeded course.
+    if (text.startsWith("+")) burst(x, y, color, this.combo >= 5);
+    else if (text.startsWith("ALLY")) hurt(x, y);
   }
   update(dt: number, inp: Input) {
     this.t += dt;
     this.step(dt, inp);
     for (const p of this.pops) p.age += dt;
     this.pops = this.pops.filter((p) => p.age < 0.8);
-    for (const s of this.sparks) {
-      s.age += dt;
-      s.x += s.vx * dt;
-      s.y += s.vy * dt;
-      s.vx *= 0.9;
-      s.vy *= 0.9;
-    }
-    this.sparks = this.sparks.filter((s) => s.age < 0.45);
-  }
-  drawSparks(g: CanvasRenderingContext2D) {
-    for (const s of this.sparks) {
-      g.globalAlpha = 1 - s.age / 0.45;
-      g.fillStyle = s.color;
-      g.fillRect(s.x - 2.5, s.y - 2.5, 5, 5);
-    }
-    g.globalAlpha = 1;
   }
   add(points: number) {
     this.score = Math.max(0, this.score + points);
@@ -100,31 +80,12 @@ function spot(rnd: () => number, r: number) {
   return { x: MARGIN + r + rnd() * (W - 2 * MARGIN - 2 * r), y: MARGIN + 60 + r + rnd() * (H - 2 * MARGIN - 60 - 2 * r) };
 }
 
-export function drawTarget(g: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, ring: number) {
-  g.save();
-  g.translate(x, y);
-  g.shadowColor = color;
-  g.shadowBlur = 24;
-  g.strokeStyle = color;
-  g.lineWidth = 4;
-  g.beginPath();
-  g.arc(0, 0, r, 0, Math.PI * 2);
-  g.stroke();
-  g.shadowBlur = 0;
-  g.fillStyle = color + "33";
-  g.fill();
-  g.fillStyle = color;
-  g.beginPath();
-  g.arc(0, 0, r * 0.28, 0, Math.PI * 2);
-  g.fill();
-  if (ring < 1) {
-    g.strokeStyle = "#ffffff88";
-    g.lineWidth = 3;
-    g.beginPath();
-    g.arc(0, 0, r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - ring));
-    g.stroke();
-  }
-  g.restore();
+/** Wall-clock seconds for purely cosmetic animation (rotors, pulses). */
+const now = () => performance.now() / 1000;
+
+/** Targets are drawn as quad drones; the hit area is still the circle of radius r. */
+export function drawTarget(g: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, ring: number, kind: "enemy" | "ally" | "track" = "enemy") {
+  drawDrone(g, x, y, r, color, ring, now(), kind);
 }
 
 /** Round 1 — Flick: click each target as fast as you can. Targets shrink as the round goes on. */
@@ -168,7 +129,7 @@ export class Flick extends Round {
     }
   }
   drawWorld(g: CanvasRenderingContext2D) {
-    drawTarget(g, this.target.x, this.target.y, this.target.r, "#4fc3ff", 1);
+    drawTarget(g, this.target.x, this.target.y, this.target.r, "#39e6ff", 1);
   }
   stats(): RoundStats {
     const avg = this.reactions.length ? this.reactions.reduce((a, b) => a + b, 0) / this.reactions.length : 0;
@@ -217,17 +178,7 @@ export class Track extends Round {
   }
   drawWorld(g: CanvasRenderingContext2D) {
     const on = this.combo > 0;
-    drawTarget(g, this.x, this.y, this.r, on ? "#5dffa8" : "#4fc3ff", 1);
-    g.save();
-    g.strokeStyle = on ? "#5dffa8" : "#4fc3ff88";
-    g.lineWidth = 3;
-    for (const s of [-1, 1]) {
-      g.beginPath();
-      g.moveTo(this.x + s * (this.r + 6), this.y);
-      g.lineTo(this.x + s * (this.r + 26), this.y - 10);
-      g.stroke();
-    }
-    g.restore();
+    drawTarget(g, this.x, this.y, this.r, on ? "#5dffa8" : "#39e6ff", 1, "track");
   }
   stats(): RoundStats {
     this.score = Math.round(this.score);
@@ -300,18 +251,7 @@ export class Clutch extends Round {
     for (const t of this.targets) {
       const ring = (this.t - t.born) / t.life;
       if (t.enemy) drawTarget(g, t.x, t.y, t.r, "#ff8a3d", ring);
-      else {
-        drawTarget(g, t.x, t.y, t.r, "#3d8bff", ring);
-        g.save();
-        g.strokeStyle = "#cfe3ff";
-        g.lineWidth = 4;
-        g.beginPath();
-        g.moveTo(t.x - t.r * 0.45, t.y);
-        g.lineTo(t.x - t.r * 0.1, t.y + t.r * 0.35);
-        g.lineTo(t.x + t.r * 0.5, t.y - t.r * 0.35);
-        g.stroke();
-        g.restore();
-      }
+      else drawTarget(g, t.x, t.y, t.r, "#3d8bff", ring, "ally");
     }
   }
   stats(): RoundStats {
